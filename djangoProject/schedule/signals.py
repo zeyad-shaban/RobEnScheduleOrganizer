@@ -6,5 +6,5 @@ from .models import Schedule
 @receiver(post_save, sender=User)
 def create_schedule(sender, instance, created, **kwargs):
     if created:
-        initial_schedule = [[0 for _ in range(16)] for _ in range(6)]
+        initial_schedule = [[0 for _ in range(14)] for _ in range(6)]
         Schedule.objects.create(user=instance, schedule_data=initial_schedule)

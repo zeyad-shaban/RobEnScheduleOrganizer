@@ -91,6 +91,16 @@
                 });
         });
 
+        // Invoke the function on page load
+        document.addEventListener('DOMContentLoaded', function () {
+            const teamSelect = document.getElementById('teamSelect');
+            const subteamSelect = document.getElementById('subteamSelect');
+            if (teamSelect.value && subteamSelect.options.length === 0) {
+                const event = new Event('change');
+                teamSelect.dispatchEvent(event);
+            }
+        });
+
         document.getElementById('teamForm').addEventListener('submit', function (e) {
             const teamSelect = document.getElementById('teamSelect');
             const subteamSelect = document.getElementById('subteamSelect');

@@ -8,6 +8,7 @@ from schedule.models import Team, Subteam
 from django.http import JsonResponse
 from schedule.models import Schedule
 
+
 def login_view(request):
     if request.method == 'POST':
         form = AuthenticationForm(request, data=request.POST)
@@ -24,11 +25,21 @@ def login_view(request):
         form = AuthenticationForm()
     return render(request, 'users/login.html', {'form': form})
 
+
 def signup_view(request):
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
-            form.save()
+            user = form.save()  # Save the user first
+            team = form.cleaned_data.get('team')
+            subteam = form.cleaned_data.get('subteam')
+            # Check if a schedule already exists for the user
+            schedule, created = Schedule.objects.get_or_create(user=user)
+            schedule.team = team
+            schedule.subteam = subteam
+            schedule.schedule_data = [[0 for _ in range(14)] for _ in range(6)]  # Initial schedule data
+            schedule.save()
+            login(request, user)  # Log in the user
             messages.success(request, 'Account created successfully.')
             return JsonResponse({'success': True, 'message': 'Account created successfully.'})
         else:
@@ -40,7 +51,7 @@ def signup_view(request):
     subteams = Subteam.objects.all()
     return render(request, 'users/signup.html', {'form': form, 'teams': teams, 'subteams': subteams})
 
-@login_required
+@login_required(login_url='/users/login/')
 def settings_view(request):
     user = request.user
     user_form = UserUpdateForm(instance=user)
@@ -57,7 +68,8 @@ def settings_view(request):
         'current_subteam': user.schedule.subteam if hasattr(user, 'schedule') else None,
     })
 
-@login_required
+
+@login_required(login_url='/users/login/')
 def update_team_subteam(request):
     if request.method == 'POST':
         team_id = request.POST.get('team')
@@ -67,7 +79,7 @@ def update_team_subteam(request):
         try:
             schedule = Schedule.objects.get(user=user)
         except Schedule.DoesNotExist:
-            initial_schedule = [[0 for _ in range(16)] for _ in range(6)]
+            initial_schedule = [[0 for _ in range(14)] for _ in range(6)]
             schedule = Schedule.objects.create(user=user, schedule_data=initial_schedule)
 
         schedule.team_id = team_id
@@ -76,7 +88,7 @@ def update_team_subteam(request):
         return JsonResponse({'success': True, 'message': 'Team and Subteam updated successfully.'})
 
 
-@login_required
+@login_required(login_url='/users/login/')
 def update_user_details(request):
     if request.method == 'POST':
         user_form = UserUpdateForm(request.POST, instance=request.user)
@@ -88,7 +100,8 @@ def update_user_details(request):
         errors = user_form.errors.as_json()
         return JsonResponse({'success': False, 'errors': errors})
 
-@login_required
+
+@login_required(login_url='/users/login/')
 def change_password(request):
     if request.method == 'POST':
         password_form = CustomPasswordChangeForm(request.user, request.POST)
@@ -99,4 +112,3 @@ def change_password(request):
         else:
             errors = password_form.errors.as_json()
             return JsonResponse({'success': False, 'errors': errors})
-

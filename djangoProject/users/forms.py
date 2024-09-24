@@ -1,11 +1,17 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, PasswordChangeForm
 from django.contrib.auth.models import User
+from teams.models import Team, Subteam
 
 class CustomUserCreationForm(UserCreationForm):
+    team = forms.ModelChoiceField(queryset=Team.objects.all(), required=True,
+                                  widget=forms.Select(attrs={'class': 'form-select'}))
+    subteam = forms.ModelChoiceField(queryset=Subteam.objects.all(), required=True,
+                                     widget=forms.Select(attrs={'class': 'form-select'}))
+
     class Meta:
         model = User
-        fields = ('username', 'password1', 'password2', 'first_name', 'last_name')
+        fields = ('username', 'password1', 'password2', 'first_name', 'last_name', 'team', 'subteam')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -14,8 +20,8 @@ class CustomUserCreationForm(UserCreationForm):
         self.fields['username'].widget.attrs.update({'class': 'form-control'})
         self.fields['password1'].widget.attrs.update({'class': 'form-control'})
         self.fields['password2'].widget.attrs.update({'class': 'form-control'})
-        self.fields['first_name'] = forms.CharField(widget=forms.TextInput(attrs={'class': 'form-control'}))
-        self.fields['last_name'] = forms.CharField(widget=forms.TextInput(attrs={'class': 'form-control'}))
+        self.fields['first_name'].widget.attrs.update({'class': 'form-control'})
+        self.fields['last_name'].widget.attrs.update({'class': 'form-control'})
 
     def clean_password2(self):
         password1 = self.cleaned_data.get('password1')
@@ -23,6 +29,7 @@ class CustomUserCreationForm(UserCreationForm):
         if password1 and password2 and password1 != password2:
             raise forms.ValidationError("Passwords don't match")
         return password2
+
 
 class CustomPasswordChangeForm(PasswordChangeForm):
     def __init__(self, *args, **kwargs):

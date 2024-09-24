@@ -84,6 +84,7 @@
                 });
         });
 
+
         // Invoke the function on page load
         document.addEventListener('DOMContentLoaded', function () {
             const teamSelect = document.getElementById('teamSelect');
@@ -123,7 +124,7 @@
                     if (data.success) {
                         clearErrors('signup-errors');
                         alert('Welcome :)');
-                        window.location.href = '{% url "login" %}';
+                        window.location.href = "/";
                     } else {
                         const errors = JSON.parse(data.errors);
                         const errorMessages = Object.values(errors).flat().map(error => error.message);
