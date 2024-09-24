@@ -5,12 +5,17 @@ from django.contrib.auth.models import User
 class CustomUserCreationForm(UserCreationForm):
     class Meta:
         model = User
-        fields = ('username', 'password1', 'password2')
+        fields = ('username', 'password1', 'password2', 'first_name', 'last_name')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['password1'].help_text = None
         self.fields['password2'].help_text = None
+        self.fields['username'].widget.attrs.update({'class': 'form-control'})
+        self.fields['password1'].widget.attrs.update({'class': 'form-control'})
+        self.fields['password2'].widget.attrs.update({'class': 'form-control'})
+        self.fields['first_name'] = forms.CharField(widget=forms.TextInput(attrs={'class': 'form-control'}))
+        self.fields['last_name'] = forms.CharField(widget=forms.TextInput(attrs={'class': 'form-control'}))
 
     def clean_password2(self):
         password1 = self.cleaned_data.get('password1')

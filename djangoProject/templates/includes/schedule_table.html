@@ -11,9 +11,24 @@
     <tbody>
     {% for row in schedule %}
         <tr>
-            <th class="bg-white fw-bold border border-dark">{{ forloop.counter0 }}</th>
+            <th class="bg-white fw-bold border border-dark">
+                {% if forloop.counter0 == 0 %}
+                    Sat
+                {% elif forloop.counter0 == 1 %}
+                    Sun
+                {% elif forloop.counter0 == 2 %}
+                    Mon
+                {% elif forloop.counter0 == 3 %}
+                    Tue
+                {% elif forloop.counter0 == 4 %}
+                    Wed
+                {% elif forloop.counter0 == 5 %}
+                    Thu
+                {% endif %}
+            </th>
             {% for session in row %}
-                <td class="{% if session == 0 %}free{% else %}busy{% endif %}"
+                <td class="schedule-cell {% if session == 0 %}free{% else %}busy{% endif %}"
+                    data-row="{{ forloop.parentloop.counter0 }}" data-col="{{ forloop.counter0 }}"
                     style="background-color: {% if session == 0 %}green{% else %}red{% endif %}; color: {% if session > 1 %}white{% endif %};">
                     {% if session > 1 %}{{ session }}{% endif %}
                 </td>

@@ -116,15 +116,6 @@
                 });
         });
 
-        // Invoke the function on page load
-        document.addEventListener('DOMContentLoaded', function () {
-            const teamSelect = document.getElementById('teamSelect');
-            if (teamSelect.value) {
-                const event = new Event('change');
-                teamSelect.dispatchEvent(event);
-            }
-        });
-
         // Function to display error messages
         function displayErrors(formId, errors) {
             const errorDiv = document.getElementById(formId);

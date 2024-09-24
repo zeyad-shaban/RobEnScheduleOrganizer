@@ -13,20 +13,16 @@
                     {{ form.username.label_tag }}
                     {{ form.username }}
                 </div>
-            </div>
-            <div class="row mb-3">
                 <div class="col-md-6">
-                    <label for="first_name" class="form-label">First Name</label>
-                    <input type="text" name="first_name" id="first_name" class="form-control">
+                    {{ form.first_name.label_tag }}
+                    {{ form.first_name }}
                 </div>
             </div>
             <div class="row mb-3">
                 <div class="col-md-6">
-                    <label for="last_name" class="form-label">Last Name</label>
-                    <input type="text" name="last_name" id="last_name" class="form-control">
+                    {{ form.last_name.label_tag }}
+                    {{ form.last_name }}
                 </div>
-            </div>
-            <div class="row mb-3">
                 <div class="col-md-6">
                     {{ form.password1.label_tag }}
                     {{ form.password1 }}
@@ -38,7 +34,6 @@
                     {{ form.password2 }}
                 </div>
             </div>
-
             <hr>
 
             <h4>Team and Subteam</h4>
@@ -64,6 +59,8 @@
             <div id="signup-errors" class="alert alert-danger d-none"></div>
             <button type="submit" class="btn btn-primary">Sign Up</button>
         </form>
+
+        <br>
         <p>Already have an account? <a href="{% url 'login' %}">Login here</a></p>
     </div>
 
@@ -125,7 +122,7 @@
                 .then(data => {
                     if (data.success) {
                         clearErrors('signup-errors');
-                        alert(data.message);
+                        alert('Welcome :)');
                         window.location.href = '{% url "login" %}';
                     } else {
                         const errors = JSON.parse(data.errors);
