@@ -3,13 +3,136 @@
 {% block title %}Sign Up{% endblock %}
 
 {% block content %}
-<div class="container">
-    <h2 class="my-4">Sign Up</h2>
-    <form method="post" class="form-group">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="btn btn-primary">Sign Up</button>
-    </form>
-    <p>Already have an account? <a href="{% url 'login' %}">Login here</a></p>
-</div>
+    <div class="container">
+        <h2 class="my-4">Sign Up</h2>
+        <form id="signup-form" class="form-group">
+            {% csrf_token %}
+            <h4>Account Information</h4>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    {{ form.username.label_tag }}
+                    {{ form.username }}
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="first_name" class="form-label">First Name</label>
+                    <input type="text" name="first_name" id="first_name" class="form-control">
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="last_name" class="form-label">Last Name</label>
+                    <input type="text" name="last_name" id="last_name" class="form-control">
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    {{ form.password1.label_tag }}
+                    {{ form.password1 }}
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    {{ form.password2.label_tag }}
+                    {{ form.password2 }}
+                </div>
+            </div>
+
+            <hr>
+
+            <h4>Team and Subteam</h4>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="teamSelect" class="form-label">Team</label>
+                    <select name="team" id="teamSelect" class="form-select">
+                        {% for team in teams %}
+                            <option value="{{ team.id }}">{{ team.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label for="subteamSelect" class="form-label">Subteam</label>
+                    <select name="subteam" id="subteamSelect" class="form-select">
+                        {% for subteam in subteams %}
+                            <option value="{{ subteam.id }}">{{ subteam.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div id="signup-errors" class="alert alert-danger d-none"></div>
+            <button type="submit" class="btn btn-primary">Sign Up</button>
+        </form>
+        <p>Already have an account? <a href="{% url 'login' %}">Login here</a></p>
+    </div>
+
+    <script>
+        document.getElementById('teamSelect').addEventListener('change', function () {
+            const teamId = this.value;
+            const baseUrl = window.location.origin;
+
+            fetch(`${baseUrl}/schedule/get_subteams/?team_id=${teamId}`)
+                .then(response => response.json())
+                .then(data => {
+                    const subteamSelect = document.getElementById('subteamSelect');
+                    subteamSelect.innerHTML = '';
+
+                    data.subteams.forEach(subteam => {
+                        const option = document.createElement('option');
+                        option.value = subteam.id;
+                        option.text = subteam.name;
+                        subteamSelect.appendChild(option);
+                    });
+                });
+        });
+
+        // Invoke the function on page load
+        document.addEventListener('DOMContentLoaded', function () {
+            const teamSelect = document.getElementById('teamSelect');
+            if (teamSelect.value) {
+                const event = new Event('change');
+                teamSelect.dispatchEvent(event);
+            }
+        });
+
+        // Function to display error messages
+        function displayErrors(formId, errors) {
+            const errorDiv = document.getElementById(formId);
+            errorDiv.classList.remove('d-none');
+            errorDiv.innerHTML = errors.join('<br>');
+        }
+
+        // Function to clear error messages
+        function clearErrors(formId) {
+            const errorDiv = document.getElementById(formId);
+            errorDiv.classList.add('d-none');
+            errorDiv.innerHTML = '';
+        }
+
+        // Handle form submission
+        document.getElementById('signup-form').addEventListener('submit', function (e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            fetch('{% url "signup" %}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        clearErrors('signup-errors');
+                        alert(data.message);
+                        window.location.href = '{% url "login" %}';
+                    } else {
+                        const errors = JSON.parse(data.errors);
+                        const errorMessages = Object.values(errors).flat().map(error => error.message);
+                        displayErrors('signup-errors', errorMessages);
+                    }
+                });
+        });
+    </script>
 {% endblock %}

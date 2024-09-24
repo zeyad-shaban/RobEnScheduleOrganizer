@@ -30,12 +30,15 @@ def signup_view(request):
         if form.is_valid():
             form.save()
             messages.success(request, 'Account created successfully.')
-            return redirect('login')
+            return JsonResponse({'success': True, 'message': 'Account created successfully.'})
         else:
-            messages.error(request, 'Please correct the errors below.')
+            errors = form.errors.as_json()
+            return JsonResponse({'success': False, 'errors': errors})
     else:
         form = CustomUserCreationForm()
-    return render(request, 'users/signup.html', {'form': form})
+    teams = Team.objects.all()
+    subteams = Subteam.objects.all()
+    return render(request, 'users/signup.html', {'form': form, 'teams': teams, 'subteams': subteams})
 
 @login_required
 def settings_view(request):
