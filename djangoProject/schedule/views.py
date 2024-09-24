@@ -1,8 +1,10 @@
 import json
 from django.http import JsonResponse
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from .models import Schedule
+from teams.models import Team, Subteam
 from django.contrib.auth.models import User
+
 
 def save_schedule(request):
     if request.method == 'POST':
@@ -17,7 +19,29 @@ def save_schedule(request):
 
 
 def team_schedule(request):
-    users = User.objects.all()
+    team_id = request.GET.get('team')
+    subteam_id = request.GET.get('subteam')
+
+    if team_id and subteam_id:
+        team = get_object_or_404(Team, id=team_id)
+        subteam = get_object_or_404(Subteam, id=subteam_id, team=team)
+        users = User.objects.filter(schedule__team=team, schedule__subteam=subteam)
+    else:
+        try:
+            schedule = Schedule.objects.get(user=request.user)
+            team = schedule.team
+            subteam = schedule.subteam
+            users = User.objects.filter(schedule__team=team, schedule__subteam=subteam)
+        except Schedule.DoesNotExist:
+            team = None
+            subteam = None
+            users = []
+
+        if team is None:
+            team = None
+            subteam = None
+            users = []
+
     total_schedule = [[0 for _ in range(16)] for _ in range(6)]  # For counting busy users
     user_busy_tracker = [[[] for _ in range(16)] for _ in range(6)]  # For tracking busy users
 
@@ -25,17 +49,27 @@ def team_schedule(request):
         try:
             schedule = Schedule.objects.get(user=user)
             schedule_data = json.loads(schedule.schedule_data)
-            # Summing schedules and tracking who is busy
-            for i in range(6):  # Iterate through rows
-                for j in range(16):  # Iterate through columns
+
+            for i in range(6):
+                for j in range(16):
                     if schedule_data[i][j] == 1:
                         total_schedule[i][j] += 1
-                        user_busy_tracker[i][j].append(f'{user.first_name} {user.last_name}')
+                        user_busy_tracker[i][j].append(f'{user.username} - {user.first_name} {user.last_name}')
         except Schedule.DoesNotExist:
-            continue  # Skip users without a schedule
+            continue
 
     return render(request, 'schedule/team_schedule.html', {
-        'schedule': total_schedule,  # Pass the count schedule
-        'user_busy_tracker': user_busy_tracker,  # Pass the busy users
+        'schedule': total_schedule,
+        'user_busy_tracker': user_busy_tracker,
         'cols_range': range(1, 17),
+        'team': team,
+        'subteam': subteam,
+        'teams': Team.objects.all(),
+        'subteams': Subteam.objects.all()
     })
+
+
+def get_subteams(request):
+    team_id = request.GET.get('team_id')
+    subteams = Subteam.objects.filter(team_id=team_id).values('id', 'name')
+    return JsonResponse({'subteams': list(subteams)})

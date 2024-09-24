@@ -12,7 +12,8 @@ class Schedule(models.Model):
     schedule_data = models.TextField()  # Keeping the same schedule field
 
     def save(self, *args, **kwargs):
-        self.schedule_data = json.dumps(self.schedule_data)
+        if isinstance(self.schedule_data, list):
+            self.schedule_data = json.dumps(self.schedule_data)
         super(Schedule, self).save(*args, **kwargs)
 
     @property

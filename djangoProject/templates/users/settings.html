@@ -1,0 +1,212 @@
+{% extends 'includes/base.html' %}
+
+{% block title %}User Settings{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <h2 class="my-4">User Settings</h2>
+
+        <!-- Team and Subteam Form -->
+        <form id="team-subteam-form" class="mb-4">
+            {% csrf_token %}
+            <h4>Team and Subteam</h4>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="teamSelect" class="form-label">Team</label>
+                    <select name="team" id="teamSelect" class="form-select">
+                        {% for team in teams %}
+                            <option value="{{ team.id }}"
+                                    {% if team.id == current_team.id %}selected{% endif %}>{{ team.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label for="subteamSelect" class="form-label">Subteam</label>
+                    <select name="subteam" id="subteamSelect" class="form-select">
+                        {% for subteam in subteams %}
+                            {% if subteam.team.id == current_team.id %}
+                                <option value="{{ subteam.id }}"
+                                        {% if subteam.id == current_subteam.id %}selected{% endif %}>{{ subteam.name }}</option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div id="team-subteam-errors" class="alert alert-danger d-none"></div>
+            <button type="submit" class="btn btn-primary">Update</button>
+        </form>
+
+        <hr>
+
+        <!-- User Details Form -->
+        <form id="user-details-form" class="mb-4">
+            {% csrf_token %}
+            <h4>User Details</h4>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    {{ user_form.username.label_tag }}
+                    {{ user_form.username }}
+                </div>
+                <div class="col-md-6">
+                    {{ user_form.first_name.label_tag }}
+                    {{ user_form.first_name }}
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    {{ user_form.last_name.label_tag }}
+                    {{ user_form.last_name }}
+                </div>
+                <div class="col-md-6">
+                    {{ user_form.email.label_tag }}
+                    {{ user_form.email }}
+                </div>
+            </div>
+
+            <div id="user-details-errors" class="alert alert-danger d-none"></div>
+            <button type="submit" class="btn btn-primary">Update</button>
+        </form>
+
+        <hr>
+
+        <!-- Password Change Form -->
+        <form id="password-change-form" class="mb-4">
+            {% csrf_token %}
+            <h4>Change Password</h4>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    {{ password_form.old_password.label_tag }}
+                    {{ password_form.old_password }}
+                </div>
+                <div class="col-md-6">
+                    {{ password_form.new_password1.label_tag }}
+                    {{ password_form.new_password1 }}
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    {{ password_form.new_password2.label_tag }}
+                    {{ password_form.new_password2 }}
+                </div>
+            </div>
+
+            <div id="password-change-errors" class="alert alert-danger d-none"></div>
+            <button type="submit" class="btn btn-primary">Update</button>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById('teamSelect').addEventListener('change', function () {
+            const teamId = this.value;
+            const baseUrl = window.location.origin;
+
+            fetch(`${baseUrl}/schedule/get_subteams/?team_id=${teamId}`)
+                .then(response => response.json())
+                .then(data => {
+                    const subteamSelect = document.getElementById('subteamSelect');
+                    subteamSelect.innerHTML = '';
+
+                    data.subteams.forEach(subteam => {
+                        const option = document.createElement('option');
+                        option.value = subteam.id;
+                        option.text = subteam.name;
+                        subteamSelect.appendChild(option);
+                    });
+                });
+        });
+
+        // Invoke the function on page load
+        document.addEventListener('DOMContentLoaded', function () {
+            const teamSelect = document.getElementById('teamSelect');
+            if (teamSelect.value) {
+                const event = new Event('change');
+                teamSelect.dispatchEvent(event);
+            }
+        });
+
+        // Function to display error messages
+        function displayErrors(formId, errors) {
+            const errorDiv = document.getElementById(formId);
+            errorDiv.classList.remove('d-none');
+            errorDiv.innerHTML = errors.join('<br>');
+        }
+
+        // Function to clear error messages
+        function clearErrors(formId) {
+            const errorDiv = document.getElementById(formId);
+            errorDiv.classList.add('d-none');
+            errorDiv.innerHTML = '';
+        }
+
+        // Handle form submissions
+        document.getElementById('team-subteam-form').addEventListener('submit', function (e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            fetch('{% url "update_team_subteam" %}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        clearErrors('team-subteam-errors');
+                        alert('Updated succesfully');
+                    } else {
+                        const errors = JSON.parse(data.errors);
+                        const errorMessages = Object.values(errors).flat().map(error => error.message);
+                        displayErrors('team-subteam-errors', errorMessages);
+                    }
+                });
+        });
+
+        document.getElementById('user-details-form').addEventListener('submit', function (e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            fetch('{% url "update_user_details" %}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        clearErrors('user-details-errors');
+                        alert('updated successfully');
+                    } else {
+                        const errors = JSON.parse(data.errors);
+                        const errorMessages = Object.values(errors).flat().map(error => error.message);
+                        displayErrors('user-details-errors', errorMessages);
+                    }
+                });
+        });
+
+        document.getElementById('password-change-form').addEventListener('submit', function (e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            fetch('{% url "change_password" %}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        clearErrors('password-change-errors');
+                        alert('updated successfully');
+                    } else {
+                        const errors = JSON.parse(data.errors);
+                        const errorMessages = Object.values(errors).flat().map(error => error.message);
+                        displayErrors('password-change-errors', errorMessages);
+                    }
+                });
+        });
+    </script>
+{% endblock %}

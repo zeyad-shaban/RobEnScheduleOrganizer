@@ -4,34 +4,101 @@
 
 {% block content %}
     <div class="container">
-        <h2 class="my-4">Team Schedule</h2>
+        <h2 class="my-4">Team Schedule for {{ team.name }} - {{ subteam.name }}</h2>
+
+        <!-- Dropdown for team and subteam -->
+        <form method="GET" id="teamForm" class="mb-4">
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="team" class="form-label">Team:</label>
+                    <select name="team" id="teamSelect" class="form-select">
+                        {% for t in teams %}
+                            <option value="{{ t.id }}"
+                                    {% if team and t.id == team.id %}selected{% endif %}>{{ t.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label for="subteam" class="form-label">Subteam:</label>
+                    <select name="subteam" id="subteamSelect" class="form-select">
+                        {% for st in subteams %}
+                            {% if st.team.id == team.id %} <!-- Filter subteams based on the selected team -->
+                                <option value="{{ st.id }}"
+                                        {% if subteam and st.id == subteam.id %}selected{% endif %}>{{ st.name }}</option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Load Schedule</button>
+        </form>
+
+        <hr>
 
         <p><span class="badge bg-success">Green</span> = All Free, <span class="badge bg-danger">Red</span> = Busy</p>
 
         {% include 'includes/schedule_table.html' %}
 
-{#        <h3 class="my-4">Details of Busy Users</h3>#}
-{#        <table class="table table-bordered text-center">#}
-{#            <thead>#}
-{#                <tr>#}
-{#                    <th>Day</th>#}
-{#                    <th>Hour</th>#}
-{#                    <th>Busy Users</th>#}
-{#                </tr>#}
-{#            </thead>#}
-{#            <tbody>#}
-{#            {% for i in range(6) %}#}
-{#                {% for j in range(16) %}#}
-{#                    {% if user_busy_tracker[i][j] %}#}
-{#                        <tr>#}
-{#                            <td>{{ i }}</td>#}
-{#                            <td>{{ j }}</td>#}
-{#                            <td>{{ user_busy_tracker[i][j]|join:", " }}</td>#}
-{#                        </tr>#}
-{#                    {% endif %}#}
-{#                {% endfor %}#}
-{#            {% endfor %}#}
-{#            </tbody>#}
-{#        </table>#}
+        <hr>
+
+        <div id="busy-users-list">
+            <p>Click on a time slot to see the users who are busy.</p>
+        </div>
     </div>
+
+    <script>
+        const userBusyTracker = {{ user_busy_tracker|safe }};
+
+        document.querySelectorAll('.schedule-cell').forEach(cell => {
+            cell.addEventListener('click', function () {
+                const row = cell.dataset.row;
+                const col = cell.dataset.col;
+
+                const busyUsers = userBusyTracker[row][col];
+                const busyUsersList = document.getElementById('busy-users-list');
+
+                if (busyUsers.length > 0) {
+                    let userListHtml = '<ul>';
+                    busyUsers.forEach(user => {
+                        userListHtml += `<li>${user}</li>`;
+                    });
+                    userListHtml += '</ul>';
+                    busyUsersList.innerHTML = userListHtml;
+                } else {
+                    busyUsersList.innerHTML = '<p>No users are busy in this time slot.</p>';
+                }
+            });
+        });
+
+        // Filtering subteams based on selected team
+        document.getElementById('teamSelect').addEventListener('change', function () {
+            const teamId = this.value;
+            const baseUrl = window.location.origin;
+
+            fetch(`${baseUrl}/schedule/get_subteams/?team_id=${teamId}`)
+                .then(response => response.json())
+                .then(data => {
+                    const subteamSelect = document.getElementById('subteamSelect');
+                    subteamSelect.innerHTML = '';
+
+                    data.subteams.forEach(subteam => {
+                        const option = document.createElement('option');
+                        option.value = subteam.id;
+                        option.text = subteam.name;
+                        subteamSelect.appendChild(option);
+                    });
+                });
+        });
+
+        document.getElementById('teamForm').addEventListener('submit', function (e) {
+            const teamSelect = document.getElementById('teamSelect');
+            const subteamSelect = document.getElementById('subteamSelect');
+
+            if (!teamSelect.value || !subteamSelect.value) {
+                e.preventDefault();
+                alert('Both Team and Subteam fields must be selected.');
+            }
+        });
+    </script>
 {% endblock %}
