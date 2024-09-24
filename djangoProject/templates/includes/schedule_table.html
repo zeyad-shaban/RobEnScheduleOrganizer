@@ -1,0 +1,24 @@
+<!-- templates/includes/schedule_table.html -->
+<table id="schedule-table" class="table table-bordered text-center">
+    <thead>
+    <tr>
+        <th></th> <!-- Empty top-left corner -->
+        {% for i in cols_range %}
+            <th class="bg-white fw-bold border border-dark">{{ i }}</th>
+        {% endfor %}
+    </tr>
+    </thead>
+    <tbody>
+    {% for row in schedule %}
+        <tr>
+            <th class="bg-white fw-bold border border-dark">{{ forloop.counter0 }}</th>
+            {% for session in row %}
+                <td class="{% if session == 0 %}free{% else %}busy{% endif %}"
+                    style="background-color: {% if session == 0 %}green{% else %}red{% endif %}; color: {% if session > 1 %}white{% endif %};">
+                    {% if session > 1 %}{{ session }}{% endif %}
+                </td>
+            {% endfor %}
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>

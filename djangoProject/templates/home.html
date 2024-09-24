@@ -1,0 +1,67 @@
+{% extends 'includes/base.html' %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <h2 class="my-4">My Schedule</h2>
+
+        <p>Select your availability:</p>
+        <p><span class="badge bg-success">Green</span> = Free, <span class="badge bg-danger">Red</span> = Busy</p>
+
+        <!-- Include the reusable schedule table -->
+        {% include 'includes/schedule_table.html' %}
+
+        <button id="save-schedule" class="btn btn-primary mt-3">Save Schedule</button>
+    </div>
+
+    <script>
+        // Toggle cell between free (green) and busy (red) when clicked
+        function toggleCell(cell) {
+            if (cell.classList.contains('free')) {
+                cell.classList.remove('free');
+                cell.classList.add('busy');
+                cell.style.backgroundColor = 'red';
+            } else {
+                cell.classList.remove('busy');
+                cell.classList.add('free');
+                cell.style.backgroundColor = 'green';
+            }
+        }
+
+        // Attach click event listeners to all schedule cells
+        document.querySelectorAll('#schedule-table tbody td').forEach(function(cell) {
+            cell.addEventListener('click', function() {
+                toggleCell(cell);
+            });
+        });
+
+        // Save the schedule when the "Save Schedule" button is clicked
+        document.getElementById('save-schedule').addEventListener('click', function () {
+            let scheduleArray = [];
+            document.querySelectorAll('#schedule-table tbody tr').forEach(function (row) {
+                let rowData = [];
+                row.querySelectorAll('td').forEach(function (cell) {
+                    rowData.push(cell.classList.contains('busy') ? 1 : 0);
+                });
+                scheduleArray.push(rowData);
+            });
+
+            // Send data to the server using Fetch API
+            fetch("{% url 'save_schedule' %}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": "{{ csrf_token }}"
+                },
+                body: JSON.stringify({schedule_data: scheduleArray})
+            }).then(response => {
+                if (response.ok) {
+                    alert('Schedule saved successfully!');
+                } else {
+                    alert('Error saving schedule.');
+                }
+            });
+        });
+    </script>
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends 'includes/base.html' %}
+
+{% block title %}Team Schedule{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <h2 class="my-4">Team Schedule</h2>
+
+        <p><span class="badge bg-success">Green</span> = All Free, <span class="badge bg-danger">Red</span> = Busy</p>
+
+        {% include 'includes/schedule_table.html' %}
+
+{#        <h3 class="my-4">Details of Busy Users</h3>#}
+{#        <table class="table table-bordered text-center">#}
+{#            <thead>#}
+{#                <tr>#}
+{#                    <th>Day</th>#}
+{#                    <th>Hour</th>#}
+{#                    <th>Busy Users</th>#}
+{#                </tr>#}
+{#            </thead>#}
+{#            <tbody>#}
+{#            {% for i in range(6) %}#}
+{#                {% for j in range(16) %}#}
+{#                    {% if user_busy_tracker[i][j] %}#}
+{#                        <tr>#}
+{#                            <td>{{ i }}</td>#}
+{#                            <td>{{ j }}</td>#}
+{#                            <td>{{ user_busy_tracker[i][j]|join:", " }}</td>#}
+{#                        </tr>#}
+{#                    {% endif %}#}
+{#                {% endfor %}#}
+{#            {% endfor %}#}
+{#            </tbody>#}
+{#        </table>#}
+    </div>
+{% endblock %}
