@@ -8,28 +8,23 @@ class CustomUserCreationForm(UserCreationForm):
                                   widget=forms.Select(attrs={'class': 'form-select'}))
     subteam = forms.ModelChoiceField(queryset=Subteam.objects.all(), required=True,
                                      widget=forms.Select(attrs={'class': 'form-select'}))
+    college_id = forms.CharField(max_length=9, min_length=9, required=True,
+                                 widget=forms.TextInput(attrs={'class': 'form-control'}))
+    email = forms.EmailField(required=True, widget=forms.EmailInput(attrs={'class': 'form-control'}))
+    phone_number = forms.CharField(required=True, widget=forms.TextInput(attrs={'class': 'form-control'}))
+    new_member = forms.BooleanField(required=False, widget=forms.CheckboxInput())
 
     class Meta:
         model = User
-        fields = ('username', 'password1', 'password2', 'first_name', 'last_name', 'team', 'subteam')
+        fields = ('username', 'password1', 'password2', 'first_name', 'last_name', 'email', 'phone_number', 'team', 'subteam', 'college_id', 'new_member')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['password1'].help_text = None
         self.fields['password2'].help_text = None
-        self.fields['username'].widget.attrs.update({'class': 'form-control'})
-        self.fields['password1'].widget.attrs.update({'class': 'form-control'})
-        self.fields['password2'].widget.attrs.update({'class': 'form-control'})
-        self.fields['first_name'].widget.attrs.update({'class': 'form-control'})
-        self.fields['last_name'].widget.attrs.update({'class': 'form-control'})
-
-    def clean_password2(self):
-        password1 = self.cleaned_data.get('password1')
-        password2 = self.cleaned_data.get('password2')
-        if password1 and password2 and password1 != password2:
-            raise forms.ValidationError("Passwords don't match")
-        return password2
-
+        # Ensure consistent styling for form fields
+        for field_name, field in self.fields.items():
+            field.widget.attrs.update({'class': 'form-control'})
 
 class CustomPasswordChangeForm(PasswordChangeForm):
     def __init__(self, *args, **kwargs):

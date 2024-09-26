@@ -3,10 +3,11 @@ from django.contrib.auth import authenticate, login, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm, PasswordChangeForm
 from django.shortcuts import render, redirect
-from .forms import UserUpdateForm, CustomPasswordChangeForm, CustomUserCreationForm
 from schedule.models import Team, Subteam
 from django.http import JsonResponse
 from schedule.models import Schedule
+from .forms import UserUpdateForm, CustomPasswordChangeForm, CustomUserCreationForm
+from .models import Profile
 
 
 def login_view(request):
@@ -33,12 +34,27 @@ def signup_view(request):
             user = form.save()  # Save the user first
             team = form.cleaned_data.get('team')
             subteam = form.cleaned_data.get('subteam')
-            # Check if a schedule already exists for the user
+            college_id = form.cleaned_data.get('college_id')
+            email = form.cleaned_data.get('email')
+            phone_number = form.cleaned_data.get('phone_number')
+            new_member = form.cleaned_data.get('new_member')
+
+            # Save extra fields in the profile
+            user.email = email
+            user.save()
+
+            # Create and save the Profile instance
+            profile = Profile.objects.create(user=user, college_id=college_id, phone_number=phone_number,
+                                             new_member=new_member)
+            profile.save()
+
+            # Save schedule and team information
             schedule, created = Schedule.objects.get_or_create(user=user)
             schedule.team = team
             schedule.subteam = subteam
             schedule.schedule_data = [[0 for _ in range(14)] for _ in range(6)]  # Initial schedule data
             schedule.save()
+
             login(request, user)  # Log in the user
             messages.success(request, 'Account created successfully.')
             return JsonResponse({'success': True, 'message': 'Account created successfully.'})
