@@ -92,15 +92,14 @@ def update_team_subteam(request):
         subteam_id = request.POST.get('subteam')
         user = request.user
 
-        try:
-            schedule = Schedule.objects.get(user=user)
-        except Schedule.DoesNotExist:
-            initial_schedule = [[0 for _ in range(14)] for _ in range(6)]
-            schedule = Schedule.objects.create(user=user, schedule_data=initial_schedule)
+        # Use get_or_create to avoid manually handling the DoesNotExist exception
+        schedule, created = Schedule.objects.get_or_create(user=user)
 
+        # Update the team and subteam
         schedule.team_id = team_id
         schedule.subteam_id = subteam_id
         schedule.save()
+
         return JsonResponse({'success': True, 'message': 'Team and Subteam updated successfully.'})
 
 

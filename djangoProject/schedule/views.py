@@ -4,7 +4,7 @@ from django.shortcuts import render, get_object_or_404
 from .models import Schedule
 from teams.models import Team, Subteam
 from django.contrib.auth.models import User
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 
 @login_required(login_url='/users/login/')
 def save_schedule(request):
@@ -19,7 +19,10 @@ def save_schedule(request):
     return JsonResponse({'status': 'error'}, status=400)
 
 
-@login_required(login_url='/users/login/')
+def staff_or_superuser(user):
+    return user.is_staff or user.is_superuser
+
+@user_passes_test(staff_or_superuser, login_url='/users/login/')
 def team_schedule(request):
     team_id = request.GET.get('team')
     subteam_id = request.GET.get('subteam')
@@ -29,36 +32,23 @@ def team_schedule(request):
         subteam = get_object_or_404(Subteam, id=subteam_id, team=team)
         users = User.objects.filter(schedule__team=team, schedule__subteam=subteam)
     else:
-        try:
-            schedule = Schedule.objects.get(user=request.user)
-            team = schedule.team
-            subteam = schedule.subteam
-            users = User.objects.filter(schedule__team=team, schedule__subteam=subteam)
-        except Schedule.DoesNotExist:
-            team = None
-            subteam = None
-            users = []
-
-        if team is None:
-            team = None
-            subteam = None
-            users = []
+        schedule = Schedule.objects.get_or_create_for_user(request.user)
+        team = schedule.team
+        subteam = schedule.subteam
+        users = User.objects.filter(schedule__team=team, schedule__subteam=subteam) if team and subteam else []
 
     total_schedule = [[0 for _ in range(14)] for _ in range(6)]  # For counting busy users
     user_busy_tracker = [[[] for _ in range(14)] for _ in range(6)]  # For tracking busy users
 
     for user in users:
-        try:
-            schedule = Schedule.objects.get(user=user)
-            schedule_data = json.loads(schedule.schedule_data)
+        schedule = Schedule.objects.get_or_create_for_user(user)
+        schedule_data = schedule.get_schedule_data
 
-            for i in range(6):
-                for j in range(14):
-                    if schedule_data[i][j] == 1:
-                        total_schedule[i][j] += 1
-                        user_busy_tracker[i][j].append(f'{user.username} - {user.first_name} {user.last_name}')
-        except Schedule.DoesNotExist:
-            continue
+        for i in range(6):
+            for j in range(14):
+                if schedule_data[i][j] == 1:
+                    total_schedule[i][j] += 1
+                    user_busy_tracker[i][j].append(f'{user.username} - {user.first_name} {user.last_name}')
 
     return render(request, 'schedule/team_schedule.html', {
         'schedule': total_schedule,
@@ -69,7 +59,6 @@ def team_schedule(request):
         'teams': Team.objects.all(),
         'subteams': Subteam.objects.all()
     })
-
 
 def get_subteams(request):
     team_id = request.GET.get('team_id')
