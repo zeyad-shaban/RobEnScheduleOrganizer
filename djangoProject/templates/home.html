@@ -1,24 +1,55 @@
 {% extends 'includes/base.html' %}
 
-{% block title %}Home{% endblock %}
+{% block title %}Welcome {{ request.user.username }} - Team: {{ team.name }} {{ subteam.name }}{% endblock %}
 
 {% block content %}
     <div class="container">
-        <h2 class="my-4">My Schedule</h2>
+        <h2 class="my-4">Welcome {{ request.user.username }}</h2>
+        <h4 class="my-4">Team: {{ team.name }} {{ subteam.name }}</h4>
+        <p class="text-muted">To change your team/subteam, go to <a href="{% url 'settings' %}">settings</a>.</p>
 
-        <p>Select your availability:</p>
+        <p class="text-muted">Click on the slots where you are not available to mark them as busy.</p>
         <p><span class="badge bg-success">Green</span> = Free, <span class="badge bg-danger">Red</span> = Busy</p>
 
         <!-- Include the reusable schedule table -->
         {% include 'includes/schedule_table.html' %}
 
+        <br>
+        <br>
+
+        <div class="row mb-3">
+            <label class="col-sm-3 col-form-label">Select your holiday:</label>
+            <div class="col-sm-9">
+                <select class="form-select" id="holiday-select">
+                    <option>Sat</option>
+                    <option>Sun</option>
+                    <option>Mon</option>
+                    <option>Tue</option>
+                    <option>Wed</option>
+                    <option>Thu</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Image upload field (required) -->
+        <div class="row mb-3">
+            <label class="col-sm-3 col-form-label">Upload an image of your schedule:</label>
+            <div class="col-sm-9">
+                <input type="file" class="form-control" id="schedule-image" required>
+            </div>
+        </div>
+
+        <p class="text-muted">Please ensure the schedule you upload matches the one you entered. Violating RobEn rules
+            will result in penalties.</p>
+
         <button id="save-schedule" class="btn btn-primary mt-3">Save Schedule</button>
-    
-        <hr>
-        <p>*Tip for dummies: click on the elements of the table to toggle aviability</p>
+
     </div>
 
     <script>
+        // Track if there are unsaved changes
+        let unsavedChanges = false;
+
         // Toggle cell between free (green) and busy (red) when clicked
         function toggleCell(cell) {
             if (cell.classList.contains('free')) {
@@ -30,17 +61,24 @@
                 cell.classList.add('free');
                 cell.style.backgroundColor = 'green';
             }
+            unsavedChanges = true; // Mark changes as unsaved
         }
 
         // Attach click event listeners to all schedule cells
-        document.querySelectorAll('#schedule-table tbody td').forEach(function(cell) {
-            cell.addEventListener('click', function() {
+        document.querySelectorAll('#schedule-table tbody td').forEach(function (cell) {
+            cell.addEventListener('click', function () {
                 toggleCell(cell);
             });
         });
 
         // Save the schedule when the "Save Schedule" button is clicked
         document.getElementById('save-schedule').addEventListener('click', function () {
+            let scheduleImage = document.getElementById('schedule-image');
+            if (!scheduleImage.files.length) {
+                alert("Please upload an image of the schedule.");
+                return; // Stop further execution if no image is uploaded
+            }
+
             let scheduleArray = [];
             document.querySelectorAll('#schedule-table tbody tr').forEach(function (row) {
                 let rowData = [];
@@ -61,10 +99,19 @@
             }).then(response => {
                 if (response.ok) {
                     alert('Schedule saved successfully!');
+                    unsavedChanges = false; // Reset when changes are saved
                 } else {
                     alert('Error saving schedule.');
                 }
             });
+        });
+
+        // Warn user if they try to exit with unsaved changes
+        window.addEventListener('beforeunload', function (e) {
+            if (unsavedChanges) {
+                e.preventDefault();
+                e.returnValue = 'You have unsaved changes. Press Save Schedule to save.';
+            }
         });
     </script>
 {% endblock %}

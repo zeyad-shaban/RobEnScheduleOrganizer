@@ -10,8 +10,9 @@ from .forms import UserUpdateForm, CustomPasswordChangeForm, CustomUserCreationF
 from .models import Profile
 from django.db import IntegrityError
 from django.core.exceptions import ValidationError
+from .decorators import anonymous_required
 
-
+@anonymous_required(redirect_to='/')
 def login_view(request):
     if request.method == 'POST':
         form = AuthenticationForm(request, data=request.POST)
@@ -28,7 +29,7 @@ def login_view(request):
         form = AuthenticationForm()
     return render(request, 'users/login.html', {'form': form})
 
-
+@anonymous_required(redirect_to='/')
 def signup_view(request):
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)
@@ -57,7 +58,6 @@ def signup_view(request):
                 schedule = Schedule.objects.get_or_create_for_user(user)
                 schedule.team = team
                 schedule.subteam = subteam
-                schedule.schedule_data = [[0 for _ in range(14)] for _ in range(6)]  # Initial schedule data
                 schedule.save()
 
                 login(request, user)  # Log in the user

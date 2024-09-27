@@ -10,7 +10,7 @@ class ScheduleManager(models.Manager):
             return self.get(user=user)
         except Schedule.DoesNotExist:
             # If schedule doesn't exist, create it with default values
-            initial_schedule = [[0 for _ in range(14)] for _ in range(6)]
+            initial_schedule = [[0 for _ in range(7)] for _ in range(6)]
             return self.create(user=user, schedule_data=json.dumps(initial_schedule))
 
 class Schedule(models.Model):

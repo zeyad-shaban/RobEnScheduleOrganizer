@@ -22,6 +22,8 @@ def save_schedule(request):
 def staff_or_superuser(user):
     return user.is_staff or user.is_superuser
 
+
+# THERE ARE MANY HARDCODED VALUES HERE REGARDING THE SCHEDULE
 @user_passes_test(staff_or_superuser, login_url='/users/login/')
 def team_schedule(request):
     team_id = request.GET.get('team')
@@ -37,23 +39,25 @@ def team_schedule(request):
         subteam = schedule.subteam
         users = User.objects.filter(schedule__team=team, schedule__subteam=subteam) if team and subteam else []
 
-    total_schedule = [[0 for _ in range(14)] for _ in range(6)]  # For counting busy users
-    user_busy_tracker = [[[] for _ in range(14)] for _ in range(6)]  # For tracking busy users
+    total_schedule = [[0 for _ in range(7)] for _ in range(6)]  # For counting busy users
+    user_busy_tracker = [[[] for _ in range(7)] for _ in range(6)]  # For tracking busy users
 
     for user in users:
         schedule = Schedule.objects.get_or_create_for_user(user)
         schedule_data = schedule.get_schedule_data
 
         for i in range(6):
-            for j in range(14):
+            for j in range(7):
                 if schedule_data[i][j] == 1:
                     total_schedule[i][j] += 1
-                    user_busy_tracker[i][j].append(f'{user.username} - {user.first_name} {user.last_name}')
+                    user_busy_tracker[i][j].append(
+                        f'{user.username} - {user.first_name} {user.last_name} - ID: {user.profile.college_id} - No.: {user.profile.phone_number} [{"New" if user.profile.new_member else "Old"} Member]'
+                    )
 
     return render(request, 'schedule/team_schedule.html', {
         'schedule': total_schedule,
         'user_busy_tracker': user_busy_tracker,
-        'cols_range': range(1, 17),
+        'cols_range': ['8:30->10:30', '10:30->12:30', '12:30->2:30', '2:30->4:30', '4:30->6:30', '6:30->8:30', '8:30->10:30'],
         'team': team,
         'subteam': subteam,
         'teams': Team.objects.all(),
