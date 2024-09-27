@@ -49,7 +49,7 @@ def signup_view(request):
             profile.save()
 
             # Save schedule and team information
-            schedule, created = Schedule.objects.get_or_create(user=user)
+            schedule, created = Schedule.objects.get_or_create_for_user(user)
             schedule.team = team
             schedule.subteam = subteam
             schedule.schedule_data = [[0 for _ in range(14)] for _ in range(6)]  # Initial schedule data
