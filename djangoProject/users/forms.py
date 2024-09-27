@@ -72,3 +72,15 @@ class UserUpdateForm(forms.ModelForm):
                 field.widget.attrs['class'] = 'form-control'
             else:
                 field.widget.attrs['class'] = 'form-check-input'
+
+    def clean_college_id(self):
+        college_id = self.cleaned_data.get('college_id')
+        if Profile.objects.filter(college_id=college_id).exclude(user=self.instance).exists():
+            raise ValidationError('A profile with this college ID already exists.')
+        return college_id
+
+    def clean_phone_number(self):
+        phone_number = self.cleaned_data.get('phone_number')
+        if Profile.objects.filter(phone_number=phone_number).exclude(user=self.instance).exists():
+            raise ValidationError('A profile with this phone number already exists.')
+        return phone_number

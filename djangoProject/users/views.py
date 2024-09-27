@@ -9,6 +9,7 @@ from schedule.models import Schedule
 from .forms import UserUpdateForm, CustomPasswordChangeForm, CustomUserCreationForm
 from .models import Profile
 from django.db import IntegrityError
+from django.core.exceptions import ValidationError
 
 
 def login_view(request):
@@ -142,3 +143,4 @@ def change_password(request):
         else:
             errors = password_form.errors.as_json()
             return JsonResponse({'success': False, 'errors': errors})
+
