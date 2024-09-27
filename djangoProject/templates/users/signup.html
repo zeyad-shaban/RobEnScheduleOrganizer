@@ -60,13 +60,11 @@
 
             <!-- New Member Checkbox -->
             <div class="form-check mb-3">
-                <input type="checkbox" name="{{ form.new_member.name }}" class="form-check-input"
-                       id="{{ form.new_member.id_for_label }}">
+                {{ form.new_member }}
                 <label class="form-check-label" for="{{ form.new_member.id_for_label }}">
                     {{ form.new_member.label }}
                 </label>
             </div>
-
 
             <hr>
 

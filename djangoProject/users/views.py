@@ -8,6 +8,7 @@ from django.http import JsonResponse
 from schedule.models import Schedule
 from .forms import UserUpdateForm, CustomPasswordChangeForm, CustomUserCreationForm
 from .models import Profile
+from django.db import IntegrityError
 
 
 def login_view(request):
@@ -32,32 +33,40 @@ def signup_view(request):
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()  # Save the user first
-            team = form.cleaned_data.get('team')
-            subteam = form.cleaned_data.get('subteam')
-            college_id = form.cleaned_data.get('college_id')
-            email = form.cleaned_data.get('email')
-            phone_number = form.cleaned_data.get('phone_number')
-            new_member = form.cleaned_data.get('new_member')
+            try:
+                team = form.cleaned_data.get('team')
+                subteam = form.cleaned_data.get('subteam')
+                college_id = form.cleaned_data.get('college_id')
+                email = form.cleaned_data.get('email')
+                phone_number = form.cleaned_data.get('phone_number')
+                new_member = form.cleaned_data.get('new_member')
 
-            # Save extra fields in the profile
-            user.email = email
-            user.save()
+                # Save extra fields in the profile
+                user.email = email
+                user.save()
 
-            # Create and save the Profile instance
-            profile = Profile.objects.create(user=user, college_id=college_id, phone_number=phone_number,
-                                             new_member=new_member)
-            profile.save()
+                # Get or create the Profile instance
+                profile, created = Profile.objects.get_or_create(user=user)
+                profile.college_id = college_id
+                profile.phone_number = phone_number
+                profile.new_member = new_member
+                profile.save()
 
-            # Save schedule and team information
-            schedule, created = Schedule.objects.get_or_create_for_user(user)
-            schedule.team = team
-            schedule.subteam = subteam
-            schedule.schedule_data = [[0 for _ in range(14)] for _ in range(6)]  # Initial schedule data
-            schedule.save()
+                # Save schedule and team information
+                schedule = Schedule.objects.get_or_create_for_user(user)
+                schedule.team = team
+                schedule.subteam = subteam
+                schedule.schedule_data = [[0 for _ in range(14)] for _ in range(6)]  # Initial schedule data
+                schedule.save()
 
-            login(request, user)  # Log in the user
-            messages.success(request, 'Account created successfully.')
-            return JsonResponse({'success': True, 'message': 'Account created successfully.'})
+                login(request, user)  # Log in the user
+                messages.success(request, 'Account created successfully.')
+                return JsonResponse({'success': True, 'message': 'Account created successfully.'})
+            except IntegrityError as e:
+                user.delete()  # Delete the user if profile creation fails
+                form.add_error(None, ValidationError(str(e)))
+                errors = form.errors.as_json()
+                return JsonResponse({'success': False, 'errors': errors})
         else:
             errors = form.errors.as_json()
             return JsonResponse({'success': False, 'errors': errors})
@@ -66,7 +75,6 @@ def signup_view(request):
     teams = Team.objects.all()
     subteams = Subteam.objects.all()
     return render(request, 'users/signup.html', {'form': form, 'teams': teams, 'subteams': subteams})
-
 @login_required(login_url='/users/login/')
 def settings_view(request):
     user = request.user
@@ -108,13 +116,20 @@ def update_user_details(request):
     if request.method == 'POST':
         user_form = UserUpdateForm(request.POST, instance=request.user)
         if user_form.is_valid():
-            user_form.save()
+            user = user_form.save()
+
+            # Update profile fields
+            profile, created = Profile.objects.get_or_create(user=user)
+            profile.college_id = user_form.cleaned_data['college_id']
+            profile.phone_number = user_form.cleaned_data['phone_number']
+            profile.new_member = user_form.cleaned_data['new_member']
+            profile.save()
+
             messages.success(request, 'User details updated successfully.')
             return JsonResponse({'success': True})
 
         errors = user_form.errors.as_json()
         return JsonResponse({'success': False, 'errors': errors})
-
 
 @login_required(login_url='/users/login/')
 def change_password(request):
