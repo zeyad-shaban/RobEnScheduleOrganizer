@@ -42,33 +42,71 @@
 
         <hr>
 
+        <!-- Toggle button to switch between Busy and Free -->
+        <div class="d-flex justify-content-center my-4">
+            <label class="form-check-label me-2">View Busy</label>
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="toggleScheduleView">
+            </div>
+            <label class="form-check-label ms-2">View Free</label>
+        </div>
+
         <div id="busy-users-list">
             <p>Click on a time slot to see the users who are busy.</p>
         </div>
     </div>
 
     <script>
+        let currentSlot = { row: null, col: null };
         const userBusyTracker = {{ user_busy_tracker|safe }};
+        const userFreeTracker = {{ user_free_tracker|safe }};
+        let showingBusy = true;
 
         document.querySelectorAll('.schedule-cell').forEach(cell => {
             cell.addEventListener('click', function () {
                 const row = cell.dataset.row;
                 const col = cell.dataset.col;
+                currentSlot = { row, col };
 
-                const busyUsers = userBusyTracker[row][col];
-                const busyUsersList = document.getElementById('busy-users-list');
+                updateUserList();
+            });
+        });
 
+        function updateUserList() {
+            const busyUsersList = document.getElementById('busy-users-list');
+            let userListHtml = '';
+
+            if (showingBusy && currentSlot.row !== null && currentSlot.col !== null) {
+                const busyUsers = userBusyTracker[currentSlot.row][currentSlot.col];
                 if (busyUsers.length > 0) {
-                    let userListHtml = '<ul>';
+                    userListHtml = '<ul>';
                     busyUsers.forEach(user => {
                         userListHtml += `<li>${user}</li>`;
                     });
                     userListHtml += '</ul>';
-                    busyUsersList.innerHTML = userListHtml;
                 } else {
-                    busyUsersList.innerHTML = '<p>No users are busy in this time slot.</p>';
+                    userListHtml = '<p>No users are busy in this time slot.</p>';
                 }
-            });
+            } else if (currentSlot.row !== null && currentSlot.col !== null) {
+                const freeUsers = userFreeTracker[currentSlot.row][currentSlot.col];
+                if (freeUsers.length > 0) {
+                    userListHtml = '<ul>';
+                    freeUsers.forEach(user => {
+                        userListHtml += `<li>${user}</li>`;
+                    });
+                    userListHtml += '</ul>';
+                } else {
+                    userListHtml = '<p>No users are free in this time slot.</p>';
+                }
+            }
+            
+            busyUsersList.innerHTML = userListHtml;
+        }
+
+        // Toggle behavior for switching between Busy and Free views
+        document.getElementById('toggleScheduleView').addEventListener('change', function () {
+            showingBusy = !this.checked;
+            updateUserList();  // Update the current view based on the toggle
         });
 
         // Filtering subteams based on selected team
@@ -104,10 +142,9 @@
         document.getElementById('teamForm').addEventListener('submit', function (e) {
             const teamSelect = document.getElementById('teamSelect');
             const subteamSelect = document.getElementById('subteamSelect');
-
             if (!teamSelect.value || !subteamSelect.value) {
                 e.preventDefault();
-                alert('Both Team and Subteam fields must be selected.');
+                alert('Please select both a team and subteam.');
             }
         });
     </script>

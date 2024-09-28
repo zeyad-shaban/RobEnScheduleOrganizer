@@ -40,7 +40,9 @@ def team_schedule(request):
         users = User.objects.filter(schedule__team=team, schedule__subteam=subteam) if team and subteam else []
 
     total_schedule = [[0 for _ in range(7)] for _ in range(6)]  # For counting busy users
+    total_free_schedule = [[0 for _ in range(7)] for _ in range(6)]  # For counting free users
     user_busy_tracker = [[[] for _ in range(7)] for _ in range(6)]  # For tracking busy users
+    user_free_tracker = [[[] for _ in range(7)] for _ in range(6)]  # For tracking free users
 
     for user in users:
         schedule = Schedule.objects.get_or_create_for_user(user)
@@ -53,10 +55,17 @@ def team_schedule(request):
                     user_busy_tracker[i][j].append(
                         f'{user.username} - {user.first_name} {user.last_name} - ID: {user.profile.college_id} - No.: {user.profile.phone_number} [{"New" if user.profile.new_member else "Old"} Member]'
                     )
+                else:
+                    total_free_schedule[i][j] += 1
+                    user_free_tracker[i][j].append(
+                        f'{user.username} - {user.first_name} {user.last_name} - ID: {user.profile.college_id} - No.: {user.profile.phone_number} [{"New" if user.profile.new_member else "Old"} Member]'
+                    )
 
     return render(request, 'schedule/team_schedule.html', {
         'schedule': total_schedule,
+        'free_schedule': total_free_schedule,  # Pass the free schedule to the template
         'user_busy_tracker': user_busy_tracker,
+        'user_free_tracker': user_free_tracker,  # Pass the free user tracker to the template
         'cols_range': ['8:30->10:30', '10:30->12:30', '12:30->2:30', '2:30->4:30', '4:30->6:30', '6:30->8:30', '8:30->10:30'],
         'team': team,
         'subteam': subteam,
